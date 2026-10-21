@@ -1,1 +1,0 @@
-print("pedro ledro medro sedro quedro tedro") 
