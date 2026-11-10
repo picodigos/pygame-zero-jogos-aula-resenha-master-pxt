@@ -30,7 +30,37 @@ estado_jogo = "JOGANDO"
 pontos_vitoria = 10
 
 estado_inimigo = "PATRULHA"
-pontos_patrulha = [(100, 100), (700, 100), (700, 500), (100, 500)]
+
+pontos_patrulha = [
+    (100, 100),
+    (220, 100),
+    (220, 120),
+    (220, 220),
+    (300, 220),
+    (380, 220),
+    (580, 220),
+    (600, 280),
+    (600, 320),
+    (380, 320),
+    (380, 400),
+    (350, 430),
+    (320, 450),
+    (320, 500),
+    (700, 500),
+    (700, 300),
+    (700, 100),
+    (580, 100),
+    (580, 130),
+    (580, 270),
+    (500, 300),
+    (350, 300),
+    (300, 300),
+    (300, 380),
+    (300, 430),
+    (100, 430),
+    (100, 500)
+]
+
 ponto_atual = 0
 
 paredes = [
@@ -96,10 +126,41 @@ def colisaogeral(personagem, dx, dy, tamanho):
         personagem.y = HEIGHT - tamanho[1] / 2
 
 
+def raycasting(origem, destino, paredes):
+    dx = destino[0] - origem[0]
+    dy = destino[1] - origem[1]
+
+    distancia = math.sqrt(dx ** 2 + dy ** 2)
+
+    if distancia == 0:
+        return True
+
+    passos = max(1, int(distancia))
+
+    for i in range(passos + 1):
+        x = origem[0] + (dx / passos) * i
+        y = origem[1] + (dy / passos) * i
+
+        ponto = (int(x), int(y))
+
+        for parede in paredes:
+            if parede.collidepoint(ponto):
+                return False
+
+    return True
+
+
 def randomspawn(personagem, tamanho):
     while True:
-        personagem.x = random.randint(tamanho[0], WIDTH - tamanho[0])
-        personagem.y = random.randint(tamanho[1], HEIGHT - tamanho[1])
+        personagem.x = random.randint(
+            tamanho[0],
+            WIDTH - tamanho[0]
+        )
+
+        personagem.y = random.randint(
+            tamanho[1],
+            HEIGHT - tamanho[1]
+        )
 
         retangulo = hitbox(personagem, tamanho)
         colidiu = False
@@ -117,7 +178,16 @@ def draw():
     screen.fill((255, 0, 0))
 
     for parede in paredes:
-        pygame.draw.rect(screen.surface, (100, 100, 100), parede)
+        pygame.draw.rect(
+            screen.surface,
+            (100, 100, 100),
+            parede
+        )
+
+    distancia = math.sqrt(
+        (inimigo.x - heroi.x) ** 2 +
+        (inimigo.y - heroi.y) ** 2
+    )
 
     pygame.draw.circle(
         screen.surface,
@@ -127,12 +197,31 @@ def draw():
         2
     )
 
+    if distancia <= campo_visao:
+        if raycasting(inimigo.pos, heroi.pos, paredes):
+            pygame.draw.line(
+                screen.surface,
+                (0, 255, 0),
+                inimigo.pos,
+                heroi.pos,
+                2
+            )
+
     Reescale(heroi, tamanho_heroi)
     Reescale(moeda, tamanho_moeda)
     Reescale(inimigo, tamanho_inimigo)
 
-    screen.draw.text("Pontos: " + str(pontos), (10, 10), color="white")
-    screen.draw.text("Vidas: " + str(vidas), (10, 35), color="white")
+    screen.draw.text(
+        "Pontos: " + str(pontos),
+        (10, 10),
+        color="white"
+    )
+
+    screen.draw.text(
+        "Vidas: " + str(vidas),
+        (10, 35),
+        color="white"
+    )
 
     if estado_jogo == "VITORIA":
         screen.draw.text(
@@ -187,7 +276,11 @@ def update():
         (inimigo.y - heroi.y) ** 2
     )
 
-    if distancia <= campo_visao:
+    if distancia <= campo_visao and raycasting(
+        inimigo.pos,
+        heroi.pos,
+        paredes
+    ):
         estado_inimigo = "PERSEGUICAO"
     else:
         estado_inimigo = "PATRULHA"
@@ -249,6 +342,7 @@ def update():
     ):
         vidas = vidas - 1
         pontos = max(0, pontos - 1)
+
         randomspawn(inimigo, tamanho_inimigo)
 
         if vidas <= 0:
